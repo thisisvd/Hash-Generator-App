@@ -79,7 +79,7 @@
         android:layout_height="60dp"
         android:layout_margin="16dp"
         android:background="@drawable/generate_button_style"
-        android:text="Generate"
+        android:text="@string/generate"
         android:textColor="@color/white"
         android:textSize="20sp"
         android:textStyle="bold"

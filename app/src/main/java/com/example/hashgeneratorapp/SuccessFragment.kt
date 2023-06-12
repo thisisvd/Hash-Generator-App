@@ -1,59 +1,73 @@
 package com.example.hashgeneratorapp
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.navArgs
+import com.example.hashgeneratorapp.databinding.FragmentSuccessBinding
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [SuccessFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class SuccessFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
+    // Data binding
+    private var _binding: FragmentSuccessBinding? = null
+    private val binding get() = _binding!!
+
+    // Nav-args
+    private val args: SuccessFragmentArgs by navArgs()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_success, container, false)
-    }
+        _binding = FragmentSuccessBinding.inflate(inflater, container, false)
+        binding.apply {
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment SuccessFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            SuccessFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+            // Setup up hash text in textview
+            hashTextView.text = args.hash
+
+            // Copy btn click listener
+            copyButton.setOnClickListener {
+                lifecycleScope.launch {
+                    onCopyClipboard(args.hash)
+                    applyAnimation()
                 }
             }
+        }
+        return binding.root
+    }
+
+    // Copy text to clipboard
+    private fun onCopyClipboard(hash: String) {
+        val clipboardManager =
+            requireActivity().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clipData = ClipData.newPlainText("Encrypted Text", hash)
+        clipboardManager.setPrimaryClip(clipData)
+    }
+
+    // Applying copy animation
+    private suspend fun applyAnimation() {
+        binding.includeView.apply {
+            messageBackground.animate().translationY(80f).duration = 200L
+            messageTextview.animate().translationY(80f).duration = 200L
+
+            delay(2000L)
+
+            messageBackground.animate().translationY(-80f).duration = 500L
+            messageTextview.animate().translationY(-80f).duration = 500L
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

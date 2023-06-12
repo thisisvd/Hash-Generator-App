@@ -9,13 +9,15 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.hashgeneratorapp.databinding.FragmentHomeBinding
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -24,6 +26,9 @@ class HomeFragment : Fragment() {
     // Data binding
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
+
+    // View model
+    private val homeViewModel: HomeViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -36,22 +41,24 @@ class HomeFragment : Fragment() {
             // Menu setup
             setUpHomeMenu()
 
-            // Auto text view adapter setup
-            val hashAlgorithms = resources.getStringArray(R.array.hash_algorithms)
-            val arrayAdapter =
-                ArrayAdapter(requireContext(), R.layout.drop_down_item, hashAlgorithms)
-            autoCompleteTextView.setAdapter(arrayAdapter)
-
-            // Animation with click listener setup
+            // on generate button clicked
             generateButton.setOnClickListener {
-                lifecycleScope.launch {
-                    applyAnimation()
-                    navigateToSuccess()
-                }
+                onGenerateClicked()
             }
-
         }
         return binding.root
+    }
+
+    // Get hash data form view model
+    private fun getHashData(): String {
+        binding.apply {
+
+            // getting data & returning
+            val algorithm = autoCompleteTextView.text.toString()
+            val plainText = plainText.text.toString()
+
+            return homeViewModel.getHash(plainText, algorithm)
+        }
     }
 
     // Animations setup
@@ -92,8 +99,9 @@ class HomeFragment : Fragment() {
     }
 
     // Navigate to success fragment
-    private fun navigateToSuccess() {
-        findNavController().navigate(R.id.action_homeFragment_to_successFragment)
+    private fun navigateToSuccess(hash: String) {
+        val directions = HomeFragmentDirections.actionHomeFragmentToSuccessFragment(hash)
+        findNavController().navigate(directions)
     }
 
     // Menu setup method
@@ -111,7 +119,8 @@ class HomeFragment : Fragment() {
                     // Handle the menu selection
                     return when (menuItem.itemId) {
                         R.id.clear_menu -> {
-                            Toast.makeText(requireContext(), "Clear", Toast.LENGTH_SHORT).show()
+                            binding.plainText.text.clear()
+                            showSnackBar("Cleared")
                             true
                         }
 
@@ -119,6 +128,48 @@ class HomeFragment : Fragment() {
                     }
                 }
             }, viewLifecycleOwner, Lifecycle.State.RESUMED)
+        }
+    }
+
+    // On generate button click
+    private fun onGenerateClicked() {
+        binding.apply {
+
+            if (plainText.text.isEmpty()) {
+                showSnackBar("Field empty.")
+            } else {
+                // Animation and next fragment navigation  setup
+                lifecycleScope.launch {
+                    applyAnimation()
+                    navigateToSuccess(getHashData())
+                }
+            }
+        }
+    }
+
+    // Snack bar method
+    private fun showSnackBar(message: String) {
+        val snackBar = Snackbar.make(
+            binding.root,
+            message,
+            Snackbar.LENGTH_SHORT
+        )
+        snackBar.setAction("Okay") {
+            // do nothing
+        }
+        snackBar.setActionTextColor(ContextCompat.getColor(requireContext(), R.color.blue))
+        snackBar.show()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        binding.apply {
+
+            // Auto text view adapter setup
+            val hashAlgorithms = resources.getStringArray(R.array.hash_algorithms)
+            val arrayAdapter =
+                ArrayAdapter(requireContext(), R.layout.drop_down_item, hashAlgorithms)
+            autoCompleteTextView.setAdapter(arrayAdapter)
         }
     }
 
