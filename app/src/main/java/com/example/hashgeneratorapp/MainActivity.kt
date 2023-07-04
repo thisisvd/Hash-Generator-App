@@ -8,7 +8,7 @@ import androidx.navigation.ui.setupActionBarWithNavController
 
 class MainActivity : AppCompatActivity() {
 
-    // Data binding
+    // Nav Controller
     private lateinit var navController: NavController
 
     override fun onCreate(savedInstanceState: Bundle?) {
